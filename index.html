@@ -2,9 +2,10 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>吉方位ナビ</title>
 
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>吉方位ナビ LuckyCompass</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="manifest" href="manifest.json">
 
@@ -12,31 +13,42 @@
 
 body{
 margin:0;
-font-family:sans-serif;
-background:black;
+background:#0b0f2a;
 color:white;
+font-family:sans-serif;
 text-align:center;
 }
 
+header{
+padding:10px;
+font-size:20px;
+}
+
 #map{
-height:80vh;
+height:70vh;
 width:100%;
 }
 
-button{
-padding:12px 20px;
+.controls{
 margin:10px;
-font-size:16px;
+}
+
+button{
+padding:10px 18px;
+margin:5px;
 border:none;
 border-radius:10px;
+font-size:14px;
 }
 
-.shrine{
-background:#ffcc00;
-}
+.shrine{background:#ffd700;}
+.food{background:#ff6b6b;}
 
-.food{
-background:#ff6666;
+input{
+padding:8px;
+border-radius:8px;
+border:none;
+margin:5px;
 }
 
 </style>
@@ -45,10 +57,23 @@ background:#ff6666;
 
 <body>
 
-<h2>🔮 吉方位ナビ</h2>
+<header>
+🔮 吉方位ナビ LuckyCompass
+</header>
+
+<div class="controls">
+
+<input type="date" id="birth">
+
+<button onclick="calcStar()">九星計算</button>
+
+<br>
 
 <button onclick="searchShrines()" class="shrine">⛩ 神社</button>
+
 <button onclick="searchFood()" class="food">🍽 開運フード</button>
+
+</div>
 
 <div id="map"></div>
 
@@ -56,141 +81,177 @@ background:#ff6666;
 
 let map;
 let center;
+let star;
 
 function initMap(){
 
-navigator.geolocation.getCurrentPosition(position=>{
+navigator.geolocation.getCurrentPosition(pos=>{
 
 center={
-lat:position.coords.latitude,
-lng:position.coords.longitude
-};
+lat:pos.coords.latitude,
+lng:pos.coords.longitude
+}
 
 map=new google.maps.Map(document.getElementById("map"),{
-zoom:14,
+zoom:13,
 center:center
-});
+})
 
 new google.maps.Marker({
 position:center,
 map:map,
 title:"現在地"
-});
+})
 
-drawLuckyDirections();
-
-});
+})
 
 }
 
-function drawLuckyDirections(){
+function calcStar(){
 
-const colors=[
-"#ff0000",
-"#ff8800",
-"#ffff00",
-"#00ff00",
-"#00ffff",
-"#0088ff",
-"#8800ff",
-"#ff00ff"
-];
+let birth=document.getElementById("birth").value
+
+if(!birth)return
+
+let year=new Date(birth).getFullYear()
+
+let num=11-(year%9)
+
+if(num>9)num-=9
+if(num<1)num+=9
+
+star=num
+
+alert("あなたの本命星は "+star+" 星です")
+
+drawDirections()
+
+}
+
+function drawDirections(){
+
+let lucky=getLuckyDirections(star)
+
+const colors={
+great:"#00ff88",
+good:"#00ccff",
+bad:"#ff4444"
+}
 
 for(let i=0;i<8;i++){
 
-let start=i*45;
-let end=start+45;
+let start=i*45
+let end=start+45
 
-let triangle=new google.maps.Polygon({
+let type="bad"
+
+if(lucky.great.includes(i))type="great"
+else if(lucky.good.includes(i))type="good"
+
+new google.maps.Polygon({
 paths:createSector(center,5000,start,end),
 strokeOpacity:0,
-fillColor:colors[i],
-fillOpacity:0.25,
+fillColor:colors[type],
+fillOpacity:0.35,
 map:map
-});
+})
 
 }
 
 }
 
-function createSector(center,radius,startAngle,endAngle){
+function getLuckyDirections(star){
 
-let points=[center];
+const table={
+1:{great:[2],good:[1,3]},
+2:{great:[4],good:[3,5]},
+3:{great:[0],good:[7,1]},
+4:{great:[6],good:[5,7]},
+5:{great:[2],good:[1,3]},
+6:{great:[0],good:[7,1]},
+7:{great:[4],good:[3,5]},
+8:{great:[6],good:[5,7]},
+9:{great:[2],good:[1,3]}
+}
 
-for(let angle=startAngle;angle<=endAngle;angle+=5){
-
-let rad=angle*Math.PI/180;
-
-let lat=center.lat+(radius/111320)*Math.cos(rad);
-let lng=center.lng+(radius/(111320*Math.cos(center.lat*Math.PI/180)))*Math.sin(rad);
-
-points.push({lat:lat,lng:lng});
+return table[star]
 
 }
 
-points.push(center);
+function createSector(center,radius,start,end){
 
-return points;
+let pts=[center]
+
+for(let a=start;a<=end;a+=5){
+
+let rad=a*Math.PI/180
+
+let lat=center.lat+(radius/111320)*Math.cos(rad)
+let lng=center.lng+(radius/(111320*Math.cos(center.lat*Math.PI/180)))*Math.sin(rad)
+
+pts.push({lat:lat,lng:lng})
+
+}
+
+pts.push(center)
+
+return pts
 
 }
 
 function searchShrines(){
 
-const request={
+const service=new google.maps.places.PlacesService(map)
+
+service.nearbySearch({
 location:center,
 radius:3000,
 keyword:"神社"
-};
+},(results,status)=>{
 
-const service=new google.maps.places.PlacesService(map);
+if(status==="OK"){
 
-service.nearbySearch(request,(results,status)=>{
-
-if(status===google.maps.places.PlacesServiceStatus.OK){
-
-results.forEach(place=>{
+results.forEach(p=>{
 
 new google.maps.Marker({
 map:map,
-position:place.geometry.location,
+position:p.geometry.location,
 icon:"https://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
-});
+})
 
-});
+})
 
 }
 
-});
+})
 
 }
 
 function searchFood(){
 
-const request={
+const service=new google.maps.places.PlacesService(map)
+
+service.nearbySearch({
 location:center,
 radius:3000,
 type:"restaurant"
-};
+},(results,status)=>{
 
-const service=new google.maps.places.PlacesService(map);
+if(status==="OK"){
 
-service.nearbySearch(request,(results,status)=>{
-
-if(status===google.maps.places.PlacesServiceStatus.OK){
-
-results.forEach(place=>{
+results.forEach(p=>{
 
 new google.maps.Marker({
 map:map,
-position:place.geometry.location,
+position:p.geometry.location,
 icon:"https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-});
+})
 
-});
+})
 
 }
 
-});
+})
 
 }
 
