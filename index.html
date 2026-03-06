@@ -1,361 +1,700 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>開運コンパス - Kaiun Compass</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
+<title>吉方位ナビ LuckyCompass</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root {
-    --deep-blue: #0b0e1a;
-    --navy: #161b33;
-    --gold: #d4af37;
-    --light-gold: #fcf4d9;
-    --glass: rgba(255, 255, 255, 0.05);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Cinzel+Decorative:wght@700&display=swap');
+
+:root{
+–gold:#f0c040;–gold2:#ffe08a;–dark:#07070f;–card:#11112a;
+–border:rgba(240,192,64,.22);–glow:0 0 18px rgba(240,192,64,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:‘Noto Serif JP’,serif;background:var(–dark);color:#e8e0d0;overflow-x:hidden}
+
+/* 星背景 */
+body::before{
+content:’’;position:fixed;inset:0;
+background-image:
+radial-gradient(1px 1px at 10% 15%,rgba(255,255,200,.6) 0%,transparent 100%),
+radial-gradient(1px 1px at 68% 8%, rgba(255,255,200,.45) 0%,transparent 100%),
+radial-gradient(1.5px 1.5px at 40% 52%,rgba(255,220,100,.4) 0%,transparent 100%),
+radial-gradient(1px 1px at 83% 33%,rgba(255,255,200,.55) 0%,transparent 100%),
+radial-gradient(1px 1px at 4%  76%,rgba(255,255,200,.35) 0%,transparent 100%),
+radial-gradient(1px 1px at 55% 87%,rgba(255,255,200,.4) 0%,transparent 100%),
+radial-gradient(1px 1px at 27% 63%,rgba(255,200,100,.3) 0%,transparent 100%),
+radial-gradient(1px 1px at 90% 60%,rgba(255,255,200,.35) 0%,transparent 100%),
+radial-gradient(1px 1px at 50% 30%,rgba(255,240,180,.4) 0%,transparent 100%);
+pointer-events:none;z-index:0;
 }
 
-body {
-    margin: 0;
-    font-family: 'Hiragino Mincho ProN', 'serif';
-    background: var(--deep-blue);
-    color: #fff;
-    overflow: hidden;
+/* ── HEADER ── */
+header{
+position:relative;z-index:10;
+padding:14px 16px 12px;
+background:linear-gradient(180deg,#0d0d22,#08081a);
+border-bottom:1px solid var(–border);
+text-align:center;
+box-shadow:0 4px 24px rgba(0,0,0,.9);
+}
+header h1{
+font-family:‘Cinzel Decorative’,serif;
+font-size:clamp(14px,4.8vw,22px);
+color:var(–gold);letter-spacing:2px;
+text-shadow:var(–glow);
+}
+header .sub{font-size:10px;color:rgba(240,192,64,.5);letter-spacing:4px;margin-top:3px}
+
+/* ── CONTROLS ── */
+#controls{
+position:relative;z-index:10;
+display:flex;gap:5px;padding:8px 10px;
+background:#090918;border-bottom:1px solid var(–border);
+overflow-x:auto;scrollbar-width:none;
+}
+#controls::-webkit-scrollbar{display:none}
+#birth{
+flex-shrink:0;background:#181830;
+border:1px solid rgba(240,192,64,.3);border-radius:8px;
+color:var(–gold2);padding:7px 9px;font-size:13px;font-family:inherit;outline:none;
+}
+#birth:focus{border-color:var(–gold);box-shadow:0 0 8px rgba(240,192,64,.2)}
+.btn{
+flex-shrink:0;display:inline-flex;align-items:center;gap:4px;
+background:linear-gradient(135deg,#1a1a36,#252548);
+border:1px solid rgba(240,192,64,.2);border-radius:8px;
+color:var(–gold2);padding:7px 10px;font-size:12px;
+font-family:inherit;cursor:pointer;white-space:nowrap;transition:all .18s;
+}
+.btn:hover,.btn:active{
+background:linear-gradient(135deg,#28284a,#363665);
+border-color:var(–gold);color:var(–gold);
+box-shadow:0 0 10px rgba(240,192,64,.28);
+}
+.btn.primary{
+background:linear-gradient(135deg,#a07808,#c89010);
+border-color:var(–gold);color:#06060f;font-weight:700;
+}
+.btn.primary:hover{background:linear-gradient(135deg,#c89010,#f0c040);box-shadow:0 0 14px rgba(240,192,64,.55)}
+
+/* ── MAP CANVAS ── */
+#map-section{
+position:relative;z-index:5;
+width:100%;height:52vmax;min-height:260px;max-height:430px;
+background:#07071a;overflow:hidden;
+}
+#map-canvas{display:block;width:100%;height:100%}
+#map-overlay{
+position:absolute;inset:0;pointer-events:none;
+display:flex;align-items:center;justify-content:center;
+}
+#map-msg{
+background:rgba(10,10,25,.85);border:1px solid var(–border);
+border-radius:10px;padding:10px 16px;font-size:12px;color:rgba(240,192,64,.7);
+text-align:center;line-height:1.7;
+}
+/* zoom controls */
+#zoom-btns{
+position:absolute;top:10px;right:10px;z-index:20;
+display:flex;flex-direction:column;gap:4px;
+}
+.z-btn{
+width:30px;height:30px;background:rgba(12,12,28,.88);
+border:1px solid var(–border);border-radius:6px;
+color:var(–gold);font-size:18px;line-height:30px;text-align:center;
+cursor:pointer;user-select:none;transition:background .15s;
+}
+.z-btn:hover{background:rgba(30,30,55,.95)}
+
+/* ── COMPASS ── */
+#radar-wrap{
+position:relative;z-index:10;
+background:linear-gradient(180deg,#080818,#0e0e20);
+border-top:1px solid var(–border);border-bottom:1px solid var(–border);
+display:flex;flex-direction:column;align-items:center;
+padding:13px 0 11px;gap:5px;
+}
+#compass-label{font-size:10px;color:rgba(240,192,64,.45);letter-spacing:3px}
+canvas#compass{display:block;filter:drop-shadow(0 0 12px rgba(240,192,64,.3))}
+
+/* ── PANEL ── */
+#panel{position:relative;z-index:10;padding:12px 10px 28px;background:var(–dark)}
+.card{
+background:var(–card);border:1px solid var(–border);border-radius:12px;
+padding:13px 14px;margin-bottom:10px;
+box-shadow:0 4px 18px rgba(0,0,0,.55);
+animation:fadeUp .4s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.ttl{
+font-size:14px;font-weight:700;color:var(–gold);margin-bottom:8px;
+display:flex;align-items:center;gap:6px;
+}
+.ttl::after{content:’’;flex:1;height:1px;background:var(–border)}
+.small{font-size:12px;color:rgba(230,220,200,.7);line-height:2}
+.fortune-row{
+display:flex;justify-content:space-between;align-items:center;
+padding:5px 0;border-bottom:1px solid rgba(240,192,64,.08);font-size:13px;
+}
+.fortune-row:last-child{border-bottom:none}
+.lbl{color:rgba(230,220,200,.5)}.val{color:var(–gold2);font-weight:700}
+.lucky-big{
+text-align:center;font-size:34px;font-weight:700;
+color:var(–gold);letter-spacing:5px;
+text-shadow:var(–glow);padding:10px 0 6px;
 }
 
-/* ヘッダー：特別感のあるデザイン */
-header {
-    padding: 15px;
-    text-align: center;
-    background: linear-gradient(180deg, #1a1a2e 0%, var(--deep-blue) 100%);
-    border-bottom: 1px solid var(--gold);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+/* 御朱印 */
+.stamp-btn{
+display:inline-block;border:1px solid #c00;border-radius:5px;
+padding:3px 9px;color:#c00;font-size:11px;font-weight:700;
+cursor:pointer;transition:background .18s,color .18s;background:transparent;
+font-family:inherit;
 }
+.stamp-btn:hover{background:#c00;color:#fff}
 
-header h1 {
-    margin: 0;
-    font-size: 1.2rem;
-    background: linear-gradient(135deg, var(--gold) 0%, #fff 50%, var(--gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: 2px;
+/* spot cards */
+.spot-card{
+display:flex;align-items:flex-start;gap:8px;
+padding:8px 0;border-bottom:1px solid rgba(240,192,64,.08);
 }
+.spot-card:last-child{border-bottom:none}
+.spot-em{font-size:20px;flex-shrink:0;margin-top:1px}
+.spot-name{font-size:13px;font-weight:700;color:var(–gold2);margin-bottom:3px}
+.spot-addr{font-size:11px;color:rgba(230,220,200,.5);line-height:1.5}
 
-/* コントロールパネル */
-#controls {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    background: var(--navy);
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
+/* Toast */
+#toast{
+position:fixed;bottom:22px;left:50%;
+transform:translateX(-50%) translateY(70px);
+background:rgba(16,16,34,.97);border:1px solid var(–gold);
+color:var(–gold2);border-radius:10px;padding:9px 18px;
+font-size:13px;z-index:9999;
+transition:transform .32s cubic-bezier(.34,1.56,.64,1);
+white-space:nowrap;pointer-events:none;
 }
+#toast.show{transform:translateX(-50%) translateY(0)}
 
-input[type="date"] {
-    background: var(--glass);
-    border: 1px solid var(--gold);
-    color: white;
-    padding: 8px;
-    border-radius: 6px;
+/* Loading */
+#loading{
+display:none;position:fixed;inset:0;
+background:rgba(5,5,14,.8);z-index:9998;
+align-items:center;justify-content:center;
+flex-direction:column;gap:12px;font-size:13px;color:var(–gold2);
 }
-
-.btn-icon {
-    background: var(--glass);
-    border: 1px solid var(--gold);
-    color: var(--light-gold);
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: 0.3s;
+#loading.show{display:flex}
+.spinner{
+width:34px;height:34px;
+border:3px solid rgba(240,192,64,.15);border-top-color:var(–gold);
+border-radius:50%;animation:spin .75s linear infinite;
 }
-
-.btn-icon.active {
-    background: var(--gold);
-    color: var(--deep-blue);
-}
-
-/* マップエリア：全画面感覚 */
-#map-container {
-    position: relative;
-    height: 55vh;
-    width: 100%;
-}
-
-#map { height: 100%; width: 100%; }
-
-/* 開運レーダーのオーバーレイ */
-#radar-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 10;
-}
-
-/* 下部パネル：宝物庫（曼荼羅スタイル） */
-#bottom-panel {
-    height: 35vh;
-    background: linear-gradient(0deg, #000 0%, var(--navy) 100%);
-    border-top: 2px solid var(--gold);
-    border-radius: 25px 25px 0 0;
-    padding: 20px;
-    overflow-y: auto;
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-}
-
-.mandala-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.goshuin-slot {
-    aspect-ratio: 1;
-    border: 1px solid rgba(212, 175, 55, 0.3);
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);
-    font-size: 0.7rem;
-    transition: 0.5s;
-}
-
-.goshuin-slot.active {
-    border-color: var(--gold);
-    box-shadow: 0 0 15px var(--gold);
-    background: radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%);
-}
-
-.fortune-card {
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-left: 4px solid var(--gold);
-}
-
-/* アニメーション */
-@keyframes pulse-gold {
-    0% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 0.5; }
-}
-
-.lucky-pulse {
-    animation: pulse-gold 2s infinite ease-in-out;
-}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
-</head>
 
+</head>
 <body>
 
+<div id="toast"></div>
+<div id="loading"><div class="spinner"></div><span id="lmsg">読み込み中...</span></div>
+
 <header>
-    <h1>開運コンパス Kaiun Compass</h1>
+  <h1>🧭 LuckyCompass</h1>
+  <div class="sub">吉 方 位 ナ ビ ゲ ー タ ー</div>
 </header>
 
 <div id="controls">
-    <input type="date" id="birth" value="1995-03-05">
-    <button class="btn-icon active" onclick="calculateLucky()">🔮 鑑定</button>
-    <button class="btn-icon" onclick="saveHome()">🏠 自宅</button>
-    <button class="btn-icon" onclick="searchNearby('神社')">⛩ 神社</button>
-    <button class="btn-icon" onclick="searchNearby('パワースポット')">✨ 聖地</button>
+  <input type="date" id="birth">
+  <button class="btn primary" onclick="calc()">🔮 吉方位を占う</button>
+  <button class="btn" onclick="saveHome()">🏠 自宅登録</button>
+  <button class="btn" onclick="searchShrine()">⛩ 神社</button>
+  <button class="btn" onclick="searchPower()">✨ パワースポット</button>
+  <button class="btn" onclick="searchFood()">🍜 開運グルメ</button>
 </div>
 
-<div id="map-container">
-    <div id="map"></div>
-    <div id="radar-overlay">
-        <canvas id="compass" width="280" height="280"></canvas>
-    </div>
+<!-- MAP: Canvas tile map -->
+
+<div id="map-section">
+  <canvas id="map-canvas"></canvas>
+  <div id="map-overlay"><div id="map-msg" id="map-msg">📡 現在地を取得中…</div></div>
+  <div id="zoom-btns">
+    <div class="z-btn" onclick="zoomIn()">＋</div>
+    <div class="z-btn" onclick="zoomOut()">－</div>
+  </div>
 </div>
 
-<div id="bottom-panel">
-    <div id="result-area">
-        <div class="fortune-card">
-            <div style="color:var(--gold); font-size: 0.8rem; margin-bottom:5px;">本日の神託</div>
-            <div id="fortune-text">生年月日を入力して鑑定を開始してください。</div>
-        </div>
-    </div>
+<div id="radar-wrap">
+  <div id="compass-label">◈ LUCKY DIRECTION COMPASS ◈</div>
+  <canvas id="compass" width="170" height="170"></canvas>
+</div>
 
-    <div style="font-size: 0.9rem; border-bottom: 1px solid var(--gold); padding-bottom: 5px;">
-        宝物庫 - デジタル御朱印
+<div id="panel">
+  <div class="card">
+    <div class="ttl">🌟 使い方</div>
+    <div class="small">
+      生年月日を入力して「吉方位を占う」をタップすると、九星気学に基づいた今日の最大吉方位が地図とコンパスに表示されます。自宅を登録してから神社・パワースポット・開運グルメを検索できます。
     </div>
-    <div class="mandala-container" id="mandala">
-        </div>
+  </div>
+  <div id="result"></div>
 </div>
 
 <script>
-let map, userPos, markers = [], luckyPolygon;
-const compass = document.getElementById("compass");
-const ctx = compass.getContext("2d");
+// ═══════════════════════════════════════════════
+//  定数・状態
+// ═══════════════════════════════════════════════
+const DIR_LABELS = ["北","北東","東","南東","南","南西","西","北西"]
+const KYUSEI = ["一白水星","二黒土星","三碧木星","四緑木星","五黄土星","六白金星","七赤金星","八白土星","九紫火星"]
 
-// --- 1. 九星気学ロジック ---
-const STAR_NAMES = ["一白水星", "二黒土星", "三碧木星", "四緑木星", "五黄土星", "六白金星", "七赤金星", "八白土星", "九紫火星"];
+let userPos  = null   // {lat, lng}
+let homePos  = null
+let luckyIdx = -1
+let goshuinCount = 0
+try { goshuinCount = parseInt(localStorage.getItem("gc") || "0") } catch(_) {}
 
-function getHonmei(birthDate) {
-    let year = new Date(birthDate).getFullYear();
-    // 節分(2/4)前なら前年扱い
-    const month = new Date(birthDate).getMonth() + 1;
-    const day = new Date(birthDate).getDate();
-    if (month < 2 || (month == 2 && day < 4)) year--;
-    
-    let sum = 0;
-    String(year).split('').forEach(n => sum += parseInt(n));
-    while(sum > 9) {
-        let nS = 0;
-        String(sum).split('').forEach(n => nS += parseInt(n));
-        sum = nS;
+// ── Canvas tile map state ──
+const mc = document.getElementById("map-canvas")
+const mcx = mc.getContext("2d")
+let tileZoom = 13
+let centerTile = null   // {x,y} tile coords
+let isDragging = false, dragStart = null, dragCenter = null
+const tileCache = {}
+const TILE_SIZE = 256
+
+// ─────────────────────────────────────────────
+// Toast / Loading
+// ─────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById("toast")
+  el.textContent = msg; el.classList.add("show")
+  clearTimeout(toast._t)
+  toast._t = setTimeout(() => el.classList.remove("show"), 2800)
+}
+function showLoad(m) { document.getElementById("lmsg").textContent = m || "読み込み中..."; document.getElementById("loading").classList.add("show") }
+function hideLoad() { document.getElementById("loading").classList.remove("show") }
+function setMapMsg(t) {
+  const el = document.getElementById("map-msg")
+  if (t) { el.textContent = t; el.style.display = "" }
+  else    { el.style.display = "none" }
+}
+
+// ─────────────────────────────────────────────
+// Tile map helpers
+// ─────────────────────────────────────────────
+function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)) }
+function lng2tile(lng, zoom) { return Math.floor((lng + 180) / 360 * Math.pow(2, zoom)) }
+function tile2lat(y, zoom) { const n = Math.PI - 2 * Math.PI * y / Math.pow(2, zoom); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))) }
+function tile2lng(x, zoom) { return x / Math.pow(2, zoom) * 360 - 180 }
+
+function latLngToPixel(lat, lng) {
+  const W = mc.width, H = mc.height
+  const n = Math.pow(2, tileZoom)
+  const cx = centerTile.x, cy = centerTile.y
+  const tx = (lng + 180) / 360 * n
+  const ty = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n
+  return {
+    x: W / 2 + (tx - cx) * TILE_SIZE,
+    y: H / 2 + (ty - cy) * TILE_SIZE
+  }
+}
+
+function pixelToLatLng(px, py) {
+  const W = mc.width, H = mc.height
+  const n = Math.pow(2, tileZoom)
+  const cx = centerTile.x, cy = centerTile.y
+  const tx = cx + (px - W / 2) / TILE_SIZE
+  const ty = cy + (py - H / 2) / TILE_SIZE
+  const lng = tx / n * 360 - 180
+  const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * ty / n)))
+  return { lat: latRad * 180 / Math.PI, lng }
+}
+
+function getTile(x, y, z, cb) {
+  const key = `${z}/${x}/${y}`
+  if (tileCache[key]) { if (tileCache[key].complete) cb(tileCache[key]); return }
+  const img = new Image()
+  img.crossOrigin = "anonymous"
+  // CartoDB Dark Matter (no API key needed)
+  img.src = `https://a.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`
+  img.onload = () => { tileCache[key] = img; cb(img) }
+  img.onerror = () => {}
+  tileCache[key] = img
+}
+
+function resizeCanvas() {
+  const sec = document.getElementById("map-section")
+  mc.width  = sec.clientWidth
+  mc.height = sec.clientHeight
+}
+
+function renderMap() {
+  if (!centerTile) return
+  const W = mc.width, H = mc.height
+  mcx.clearRect(0, 0, W, H)
+  mcx.fillStyle = "#07071a"; mcx.fillRect(0, 0, W, H)
+
+  const cx = centerTile.x, cy = centerTile.y
+  const tilesX = Math.ceil(W / TILE_SIZE / 2) + 2
+  const tilesY = Math.ceil(H / TILE_SIZE / 2) + 2
+
+  for (let dx = -tilesX; dx <= tilesX; dx++) {
+    for (let dy = -tilesY; dy <= tilesY; dy++) {
+      const tx = Math.floor(cx) + dx
+      const ty = Math.floor(cy) + dy
+      const px = W / 2 + (tx - cx) * TILE_SIZE
+      const py = H / 2 + (ty - cy) * TILE_SIZE
+      const n = Math.pow(2, tileZoom)
+      const wx = ((tx % n) + n) % n
+      getTile(wx, ty, tileZoom, img => { renderMap() })
+      const key = `${tileZoom}/${((tx % n) + n) % n}/${ty}`
+      if (tileCache[key] && tileCache[key].complete && tileCache[key].naturalWidth > 0) {
+        mcx.drawImage(tileCache[key], Math.round(px), Math.round(py), TILE_SIZE, TILE_SIZE)
+      }
     }
-    let idx = (11 - sum) % 9;
-    return STAR_NAMES[idx === 0 ? 8 : idx - 1];
-}
+  }
 
-// --- 2. 地図の初期化 ---
-function initMap() {
-    map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 14,
-        center: {lat: 34.747, lng: 135.341}, // 西宮周辺をデフォルトに
-        disableDefaultUI: true,
-        styles: [
-            { "elementType": "geometry", "stylers": [{ "color": "#0b0e1a" }] },
-            { "elementType": "labels.text.fill", "stylers": [{ "color": "#8d94a3" }] },
-            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] }
-        ]
-    });
+  // 吉方位扇形
+  if (luckyIdx >= 0 && userPos) {
+    const op = latLngToPixel(userPos.lat, userPos.lng)
+    const startDeg = luckyIdx * 45 - 22.5
+    const endDeg   = startDeg + 45
+    const radius   = Math.min(W, H) * 0.38
 
-    navigator.geolocation.getCurrentPosition(pos => {
-        userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        map.setCenter(userPos);
-        new google.maps.Marker({ position: userPos, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 } });
-    });
-
-    drawCompass();
-    createMandala();
-}
-
-// --- 3. 鑑定実行 ---
-function calculateLucky() {
-    const birth = document.getElementById("birth").value;
-    if(!birth) return;
-
-    const star = getHonmei(birth);
-    // ロジックに基づいた吉方位（簡易的にランダムまたは日付固定）
-    const luckyDirs = ["南東", "北西", "西", "東"];
-    const luckyDir = luckyDirs[Math.floor(Math.random() * luckyDirs.length)];
-    const angleMap = {"北": 270, "北東": 315, "東": 0, "南東": 45, "南": 90, "南西": 135, "西": 180, "北西": 225};
-
-    document.getElementById("fortune-text").innerHTML = 
-        `あなたの星：<b>${star}</b><br>本日の最大吉方：<b style="color:var(--gold); font-size:1.2rem;">${luckyDir}</b>`;
-
-    drawCompass(angleMap[luckyDir]);
-    showLuckySector(angleMap[luckyDir]);
-}
-
-// --- 4. ビジュアル演出（羅盤 & セクター） ---
-function drawCompass(luckyAngle = null) {
-    ctx.clearRect(0, 0, 280, 280);
-    const cx = 140, cy = 140;
-
-    // 外枠
-    ctx.beginPath();
-    ctx.arc(cx, cy, 120, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(212, 175, 55, 0.3)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 吉方位へのサーチライト
-    if(luckyAngle !== null) {
-        const rad = (luckyAngle * Math.PI) / 180;
-        const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 130);
-        grad.addColorStop(0, "rgba(212, 175, 55, 0.8)");
-        grad.addColorStop(1, "transparent");
-        
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, 130, rad - 0.3, rad + 0.3);
-        ctx.fillStyle = grad;
-        ctx.fill();
+    mcx.beginPath()
+    mcx.moveTo(op.x, op.y)
+    for (let a = startDeg; a <= endDeg; a += 0.5) {
+      const rad = (a - 90) * Math.PI / 180
+      mcx.lineTo(op.x + Math.cos(rad) * radius, op.y + Math.sin(rad) * radius)
     }
+    mcx.closePath()
+    mcx.fillStyle   = "rgba(240,192,64,0.15)"
+    mcx.strokeStyle = "rgba(240,192,64,0.75)"
+    mcx.lineWidth   = 2
+    mcx.fill(); mcx.stroke()
+
+    // 方位ラベル
+    const midRad = ((startDeg + endDeg) / 2 - 90) * Math.PI / 180
+    const lx = op.x + Math.cos(midRad) * radius * 0.62
+    const ly = op.y + Math.sin(midRad) * radius * 0.62
+    mcx.font = "bold 13px 'Noto Serif JP',serif"
+    mcx.fillStyle = "#f0c040"
+    mcx.textAlign = "center"; mcx.textBaseline = "middle"
+    mcx.shadowColor = "#000"; mcx.shadowBlur = 6
+    mcx.fillText("✨ " + DIR_LABELS[luckyIdx], lx, ly)
+    mcx.shadowBlur = 0
+  }
+
+  // マーカー描画
+  mapMarkers.forEach(m => drawMapMarker(m))
 }
 
-function showLuckySector(angle) {
-    if(luckyPolygon) luckyPolygon.setMap(null);
-    const center = map.getCenter();
-    const radius = 0.02; // 約2km
-    const path = [center];
-    
-    for(let a = angle - 20; a <= angle + 20; a += 2) {
-        const rad = (a * Math.PI) / 180;
-        path.push({ lat: center.lat() + radius * Math.sin(rad), lng: center.lng() + radius * Math.cos(rad) });
-    }
-    path.push(center);
+// ─────────────────────────────────────────────
+// マーカー管理
+// ─────────────────────────────────────────────
+const mapMarkers = []
 
-    luckyPolygon = new google.maps.Polygon({
-        paths: path,
-        map: map,
-        fillColor: "#d4af37",
-        fillOpacity: 0.2,
-        strokeColor: "#d4af37",
-        strokeWeight: 1
-    });
+function addMarker(lat, lng, emoji, label, popupHtml) {
+  mapMarkers.push({ lat, lng, emoji, label, popupHtml })
+  renderMap()
 }
 
-// --- 5. 神社検索 & 御朱印 ---
-function searchNearby(keyword) {
-    const service = new google.maps.places.PlacesService(map);
-    service.nearbySearch({ location: map.getCenter(), radius: 3000, keyword: keyword }, (results) => {
-        markers.forEach(m => m.setMap(null));
-        results.forEach(place => {
-            const m = new google.maps.Marker({
-                position: place.geometry.location,
-                map: map,
-                animation: google.maps.Animation.DROP,
-                icon: { url: 'https://maps.google.com/mapfiles/ms/icons/gold-snlv.png' }
-            });
-            m.addListener('click', () => {
-                new google.maps.InfoWindow({ content: `<b>${place.name}</b><br><button onclick="getGoshuin('${place.name}')" style="background:var(--gold); border:none; border-radius:4px; padding:5px; margin-top:5px; cursor:pointer;">御朱印を授かる</button>` }).open(map, m);
-            });
-            markers.push(m);
-        });
-    });
+function drawMapMarker(m) {
+  const p = latLngToPixel(m.lat, m.lng)
+  mcx.font = "20px serif"
+  mcx.textAlign = "center"; mcx.textBaseline = "bottom"
+  mcx.shadowColor = "#000"; mcx.shadowBlur = 5
+  mcx.fillText(m.emoji, p.x, p.y)
+  mcx.shadowBlur = 0
 }
 
-function getGoshuin(name) {
-    const slots = document.querySelectorAll('.goshuin-slot');
-    for(let slot of slots) {
-        if(!slot.classList.contains('active')) {
-            slot.classList.add('active');
-            slot.innerHTML = `<span style="font-size:1.5rem">⛩️</span><br>${name.substring(0,4)}`;
-            alert(`【${name}】のデジタル御朱印を宝物庫に納めました。`);
-            // ハプティックフィードバックのシミュレーション
-            if (window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
-            break;
+// タップでポップアップ
+let activePopup = null
+mc.addEventListener("click", e => {
+  const rect = mc.getBoundingClientRect()
+  const px = e.clientX - rect.left
+  const py = e.clientY - rect.top
+  let hit = null
+  for (const m of mapMarkers) {
+    const p = latLngToPixel(m.lat, m.lng)
+    if (Math.abs(p.x - px) < 18 && Math.abs(p.y - py) < 22) { hit = m; break }
+  }
+  showPopup(hit, e.clientX, e.clientY)
+})
+
+function showPopup(m, cx, cy) {
+  if (activePopup) { activePopup.remove(); activePopup = null }
+  if (!m || !m.popupHtml) return
+  const div = document.createElement("div")
+  div.style.cssText = `position:fixed;left:${Math.min(cx, window.innerWidth - 230)}px;top:${cy - 10}px;transform:translateY(-100%);
+    background:#13132a;border:1px solid rgba(240,192,64,.35);border-radius:10px;
+    padding:10px 13px;font-size:12px;color:#e8e0d0;z-index:1000;
+    min-width:170px;max-width:220px;font-family:'Noto Serif JP',serif;
+    box-shadow:0 4px 20px rgba(0,0,0,.8);`
+  div.innerHTML = m.popupHtml
+  document.body.appendChild(div)
+  activePopup = div
+  setTimeout(() => { document.addEventListener("click", closePopupOnce, {once:true}) }, 10)
+}
+function closePopupOnce() { if (activePopup) { activePopup.remove(); activePopup = null } }
+
+// ─────────────────────────────────────────────
+// ドラッグ / パン
+// ─────────────────────────────────────────────
+mc.addEventListener("mousedown",  e => startDrag(e.clientX, e.clientY))
+mc.addEventListener("touchstart", e => { const t=e.touches[0]; startDrag(t.clientX, t.clientY) }, {passive:true})
+mc.addEventListener("mousemove",  e => doDrag(e.clientX, e.clientY))
+mc.addEventListener("touchmove",  e => { const t=e.touches[0]; doDrag(t.clientX, t.clientY) }, {passive:true})
+mc.addEventListener("mouseup",  endDrag)
+mc.addEventListener("touchend", endDrag)
+
+function startDrag(x, y) { isDragging=true; dragStart={x,y}; dragCenter={x:centerTile.x, y:centerTile.y} }
+function doDrag(x, y) {
+  if (!isDragging || !dragStart) return
+  centerTile = {
+    x: dragCenter.x - (x - dragStart.x) / TILE_SIZE,
+    y: dragCenter.y - (y - dragStart.y) / TILE_SIZE
+  }
+  renderMap()
+}
+function endDrag() { isDragging = false }
+
+function zoomIn()  { tileZoom = Math.min(18, tileZoom + 1); recenter(); renderMap() }
+function zoomOut() { tileZoom = Math.max(5,  tileZoom - 1); recenter(); renderMap() }
+
+function recenter() {
+  if (!userPos) return
+  centerTile = {
+    x: lng2tile(userPos.lng, tileZoom) + 0.5,
+    y: lat2tile(userPos.lat, tileZoom) + 0.5
+  }
+}
+
+// ─────────────────────────────────────────────
+// 起動
+// ─────────────────────────────────────────────
+window.addEventListener("load", () => {
+  resizeCanvas()
+  window.addEventListener("resize", () => { resizeCanvas(); renderMap() })
+
+  if (navigator.geolocation) {
+    showLoad("現在地を取得中...")
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        hideLoad()
+        userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        centerTile = {
+          x: lng2tile(userPos.lng, tileZoom) + 0.5,
+          y: lat2tile(userPos.lat, tileZoom) + 0.5
         }
-    }
+        setMapMsg(null)
+        renderMap()
+        addMarker(userPos.lat, userPos.lng, "📍", "現在地",
+          "<b style='color:#f0c040'>📍 現在地</b>")
+
+        try {
+          const s = localStorage.getItem("hp")
+          if (s) { homePos = JSON.parse(s); addMarker(homePos.lat, homePos.lng, "🏠", "自宅", "<b style='color:#f0c040'>🏠 自宅</b>") }
+        } catch(_) {}
+      },
+      () => {
+        hideLoad()
+        userPos = { lat: 35.6812, lng: 139.7671 }
+        centerTile = { x: lng2tile(userPos.lng, tileZoom)+0.5, y: lat2tile(userPos.lat, tileZoom)+0.5 }
+        setMapMsg(null)
+        renderMap()
+        addMarker(userPos.lat, userPos.lng, "📍", "東京", "<b style='color:#f0c040'>📍 東京（デフォルト）</b>")
+        toast("⚠️ 位置情報を取得できませんでした")
+      },
+      { timeout: 7000 }
+    )
+  } else {
+    userPos = { lat: 35.6812, lng: 139.7671 }
+    centerTile = { x: lng2tile(userPos.lng, tileZoom)+0.5, y: lat2tile(userPos.lat, tileZoom)+0.5 }
+    setMapMsg(null); renderMap()
+  }
+
+  // コンパス初期描画
+  drawCompass()
+})
+
+// ─────────────────────────────────────────────
+// 九星気学
+// ─────────────────────────────────────────────
+function calcStar(y) { let n = (11 - (y % 9)) % 9; return n === 0 ? 9 : n }
+
+function calc() {
+  const v = document.getElementById("birth").value
+  if (!v) { toast("⚠️ 生年月日を入力してください"); return }
+  const year  = new Date(v).getFullYear()
+  const month = new Date().getMonth() + 1
+  const star  = calcStar(year)
+  const name  = KYUSEI[star - 1]
+  luckyIdx = (star * 31 + month * 7) % 8
+  const s1 = DIR_LABELS[(luckyIdx + 1) % 8]
+  const s2 = DIR_LABELS[(luckyIdx + 7) % 8]
+
+  drawCompass(luckyIdx)
+  renderMap()
+
+  document.getElementById("result").innerHTML = `
+    <div class="card" style="border-color:rgba(240,192,64,.42);background:linear-gradient(135deg,#0f0f28,#181838);">
+      <div class="ttl">🔮 今日の運勢</div>
+      <div class="lucky-big">${DIR_LABELS[luckyIdx]}</div>
+      <div class="fortune-row"><span class="lbl">本命星</span><span class="val">${star} / ${name}</span></div>
+      <div class="fortune-row"><span class="lbl">最大吉方位</span><span class="val">${DIR_LABELS[luckyIdx]}</span></div>
+      <div class="fortune-row"><span class="lbl">吉方位（補）</span><span class="val">${s1} ／ ${s2}</span></div>
+      <div class="fortune-row"><span class="lbl">基準</span><span class="val">${year}年生 / ${month}月</span></div>
+    </div>`
+  toast(`✨ 吉方位：${DIR_LABELS[luckyIdx]} が表示されました`)
 }
 
-function createMandala() {
-    const container = document.getElementById("mandala");
-    for(let i=0; i<9; i++) {
-        const slot = document.createElement('div');
-        slot.className = 'goshuin-slot';
-        slot.innerHTML = "？";
-        container.appendChild(slot);
-    }
+// ─────────────────────────────────────────────
+// コンパス Canvas 描画
+// ─────────────────────────────────────────────
+function drawCompass(hi = -1) {
+  const cvs = document.getElementById("compass")
+  const c   = cvs.getContext("2d")
+  const W=170, H=170, R=74, cx=W/2, cy=H/2
+  c.clearRect(0,0,W,H)
+
+  const bg = c.createRadialGradient(cx,cy,18,cx,cy,R+6)
+  bg.addColorStop(0,"#1c1c38"); bg.addColorStop(1,"#07071a")
+  c.beginPath(); c.arc(cx,cy,R+3,0,Math.PI*2); c.fillStyle=bg; c.fill()
+
+  c.beginPath(); c.arc(cx,cy,R,0,Math.PI*2)
+  c.strokeStyle="rgba(240,192,64,.5)"; c.lineWidth=1.5; c.stroke()
+
+  // 内側リング
+  c.beginPath(); c.arc(cx,cy,R*0.4,0,Math.PI*2)
+  c.strokeStyle="rgba(240,192,64,.12)"; c.lineWidth=1; c.stroke()
+
+  if (hi >= 0) {
+    const s=(hi*45-90-22.5)*Math.PI/180, e=s+45*Math.PI/180
+    c.beginPath(); c.moveTo(cx,cy); c.arc(cx,cy,R-4,s,e); c.closePath()
+    const sg=c.createRadialGradient(cx,cy,0,cx,cy,R)
+    sg.addColorStop(0,"rgba(240,192,64,.05)"); sg.addColorStop(1,"rgba(240,192,64,.36)")
+    c.fillStyle=sg; c.fill()
+    c.beginPath(); c.moveTo(cx,cy); c.arc(cx,cy,R-4,s,e); c.closePath()
+    c.strokeStyle="rgba(240,192,64,.6)"; c.lineWidth=1.5; c.stroke()
+  }
+
+  DIR_LABELS.forEach((lbl,i)=>{
+    const deg=i*45-90, rad=deg*Math.PI/180, lk=i===hi
+    c.beginPath()
+    c.moveTo(cx+Math.cos(rad)*(lk?14:24), cy+Math.sin(rad)*(lk?14:24))
+    c.lineTo(cx+Math.cos(rad)*(R-5),       cy+Math.sin(rad)*(R-5))
+    c.strokeStyle=lk?"rgba(240,192,64,.98)":"rgba(255,255,255,.12)"
+    c.lineWidth=lk?2.5:1; c.stroke()
+
+    c.beginPath()
+    c.arc(cx+Math.cos(rad)*(R-10), cy+Math.sin(rad)*(R-10), lk?6:3.5, 0, Math.PI*2)
+    c.fillStyle=lk?"#f0c040":"rgba(255,255,255,.2)"; c.fill()
+    if(lk){ c.strokeStyle="rgba(255,220,80,.7)"; c.lineWidth=1.5; c.stroke() }
+
+    c.font=lk?"bold 12px 'Noto Serif JP',serif":"10px 'Noto Serif JP',serif"
+    c.fillStyle=lk?"#f0c040":"rgba(255,255,255,.38)"
+    c.textAlign="center"; c.textBaseline="middle"
+    const lr=R+15
+    c.fillText(lbl, cx+Math.cos(rad)*lr, cy+Math.sin(rad)*lr)
+  })
+
+  // 中心ドット
+  c.beginPath(); c.arc(cx,cy,8,0,Math.PI*2); c.fillStyle="#f0c040"; c.fill()
+  c.beginPath(); c.arc(cx,cy,4,0,Math.PI*2); c.fillStyle="#08080f"; c.fill()
 }
 
+// ─────────────────────────────────────────────
+// 自宅登録
+// ─────────────────────────────────────────────
 function saveHome() {
-    const center = map.getCenter();
-    new google.maps.Marker({ position: center, map: map, icon: 'https://maps.google.com/mapfiles/kml/pal2/icon10.png' });
-    alert("自宅を基点として登録しました。");
+  const pos = userPos || { lat:35.6812, lng:139.7671 }
+  homePos = pos
+  try { localStorage.setItem("hp", JSON.stringify(pos)) } catch(_) {}
+  addMarker(pos.lat, pos.lng, "🏠", "自宅", "<b style='color:#f0c040'>🏠 自宅</b>")
+  toast("🏠 自宅を登録しました")
 }
 
+// ─────────────────────────────────────────────
+// スポット検索（Overpass API）
+// ─────────────────────────────────────────────
+function searchShrine() { searchOverpass("shrine") }
+function searchPower()  { searchOverpass("power") }
+function searchFood()   { searchOverpass("food") }
+
+async function searchOverpass(type) {
+  const c = homePos || userPos || { lat:35.6812, lng:139.7671 }
+  showLoad("スポットを検索中...")
+  const Q = {
+    shrine: `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="shinto"](around:4000,${c.lat},${c.lng});node["historic"="wayside_shrine"](around:4000,${c.lat},${c.lng}););out body 15;`,
+    power:  `[out:json][timeout:15];(node["tourism"="attraction"](around:4000,${c.lat},${c.lng});node["historic"](around:4000,${c.lat},${c.lng}););out body 15;`,
+    food:   `[out:json][timeout:15];node["amenity"="restaurant"](around:2500,${c.lat},${c.lng});out body 20;`
+  }
+  const EM = { shrine:"⛩", power:"✨", food:"🍜" }
+  try {
+    const res  = await fetch("https://overpass-api.de/api/interpreter", { method:"POST", body:"data="+encodeURIComponent(Q[type]) })
+    const data = await res.json()
+    hideLoad()
+    const els = (data.elements || []).filter(e => e.lat && e.lon).slice(0, 18)
+    if (els.length === 0) { toast("⚠️ 付近のスポットが見つかりませんでした"); return }
+
+    const em = EM[type]
+    const labels = []
+    els.forEach(el => {
+      const name = (el.tags && (el.tags["name:ja"] || el.tags.name)) || "名称不明"
+      const popup = `
+        <div style="margin-bottom:5px;font-weight:700;color:#f0c040;">${em} ${name}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+          <button class="stamp-btn" onclick="goshuin('${name.replace(/'/g,"&#39;")}',this)">📿 御朱印</button>
+          <a href="https://www.google.com/maps/search/?api=1&query=${el.lat},${el.lon}" target="_blank"
+             style="color:#f0c040;font-size:11px;padding:3px 8px;border:1px solid rgba(240,192,64,.4);border-radius:4px;text-decoration:none;">🗺 詳細</a>
+        </div>`
+      addMarker(el.lat, el.lon, em, name, popup)
+      labels.push({ em, name })
+    })
+
+    // パネルにリスト表示
+    const listHtml = labels.map(l => `
+      <div class="spot-card">
+        <div class="spot-em">${l.em}</div>
+        <div><div class="spot-name">${l.name}</div></div>
+      </div>`).join("")
+    const old = document.getElementById("spot-panel"); if (old) old.remove()
+    const div = document.createElement("div"); div.id = "spot-panel"; div.className = "card"
+    div.innerHTML = `<div class="ttl">${em} 近くのスポット（${labels.length}件）</div>${listHtml}`
+    document.getElementById("result").prepend(div)
+
+    toast(`📍 ${labels.length}件見つかりました`)
+    renderMap()
+  } catch(e) {
+    hideLoad(); toast("⚠️ 検索に失敗しました"); console.error(e)
+  }
+}
+
+// ─────────────────────────────────────────────
+// デジタル御朱印
+// ─────────────────────────────────────────────
+function goshuin(name, btn) {
+  goshuinCount++
+  try { localStorage.setItem("gc", goshuinCount) } catch(_) {}
+  if (btn) { btn.textContent = "✅ 取得済"; btn.style.pointerEvents = "none"; btn.style.opacity = ".5" }
+  const today = new Date().toLocaleDateString("ja-JP")
+  const old = document.getElementById("gp"); if (old) old.remove()
+  const div = document.createElement("div"); div.id = "gp"; div.className = "card"
+  div.innerHTML = `
+    <div class="ttl">📿 デジタル御朱印</div>
+    <div style="text-align:center;padding:8px 0 4px;">
+      <div style="font-size:24px;color:#c00;font-weight:700;letter-spacing:5px;">奉 拝</div>
+      <div style="font-size:16px;color:var(--gold);margin:7px 0 4px;font-weight:700;">${name}</div>
+      <div style="font-size:11px;color:rgba(230,220,200,.5);">${today} 参拝</div>
+      <div style="margin-top:8px;font-size:12px;color:rgba(230,220,200,.55);">
+        累計 <span style="color:var(--gold);font-weight:700;">${goshuinCount}</span> 社 参拝
+      </div>
+    </div>`
+  document.getElementById("result").appendChild(div)
+  toast(`📿 御朱印を取得しました（${goshuinCount}社目）`)
+}
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
 
 </body>
 </html>
