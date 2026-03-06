@@ -1,424 +1,261 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>吉方位ナビ LuckyCompass</title>
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <style>
 
 body{
-margin:0;
 font-family:sans-serif;
-background:#0b0f2a;
+margin:0;
+background:#0c0c16;
 color:white;
-text-align:center;
 }
 
 header{
-padding:10px;
-font-size:22px;
+text-align:center;
+padding:15px;
+background:#111;
+}
+
+h1{
+margin:0;
+color:gold;
 }
 
 #map{
-height:65vh;
+height:70vh;
 width:100%;
 }
 
-.controls{
-padding:10px;
+#panel{
+padding:15px;
+background:#1a1a2b;
+}
+
+input,button{
+padding:8px;
+margin:4px;
+border-radius:6px;
+border:none;
 }
 
 button{
-padding:10px 14px;
-margin:4px;
-border:none;
-border-radius:10px;
-cursor:pointer;
+background:gold;
+font-weight:bold;
 }
 
-.shrine{background:#ffd700;}
-.food{background:#ff6b6b;}
-
-input{
-padding:8px;
-border-radius:8px;
-border:none;
-}
-
-#fortune{
-padding:10px;
+.feature{
+margin-top:10px;
+font-size:14px;
+opacity:0.8;
 }
 
 </style>
 </head>
+
 <body>
+
 <header>
-🔮 吉方位ナビ LuckyCompass
-</header>
-<div class="controls">
+
+<h1>🧭 吉方位ナビ LuckyCompass</h1>
+
+<div>
+
 <input type="date" id="birth">
-<br>
+
+<button onclick="calc()">吉方位計算</button>
+
+<button onclick="saveHome()">🏠自宅保存</button>
+
+<button onclick="searchShrine()">⛩神社</button>
+
+<button onclick="searchFood()">🍜開運グルメ</button>
+
 </div>
-<div id="fortune"></div>
+
+</header>
+
 <div id="map"></div>
+
+<div id="panel">
+
+<div class="feature">
+
+🧭 吉方位地図  
+🔮 九星気学  
+🏠 自宅登録  
+⛩ 神社検索  
+🍜 開運グルメ  
+📿 デジタル御朱印  
+📍 スポット詳細  
+
+</div>
+
+<div id="result"></div>
+
+</div>
+
 <script>
 
 let map
-let center
-let star
-let sectors=[]
-
-let homeLocation=null
-
-let goshuin=[]
+let userPos
+let homePos
 
 function initMap(){
 
+map=new google.maps.Map(document.getElementById("map"),{
+zoom:12,
+center:{lat:35,lng:135},
+styles:[
+{elementType:"geometry",stylers:[{color:"#0c0c16"}]},
+{elementType:"labels.text.fill",stylers:[{color:"#ffffff"}]}
+]
+})
+
 navigator.geolocation.getCurrentPosition(pos=>{
 
-center={
+userPos={
 lat:pos.coords.latitude,
 lng:pos.coords.longitude
 }
 
-map=new google.maps.Map(document.getElementById("map"),{
-
-zoom:13,
-center:center
-
-})
+map.setCenter(userPos)
 
 new google.maps.Marker({
-
-position:center,
+position:userPos,
 map:map,
 title:"現在地"
-
-})
-
-loadHome()
-
-map.addListener("click",(e)=>{
-
-let lat=e.latLng.lat()
-let lng=e.latLng.lng()
-
-if(confirm("ここを自宅に設定しますか？")){
-setHome(lat,lng)
-}
-
 })
 
 })
 
 }
 
-function setHome(lat,lng){
-
-homeLocation={lat:lat,lng:lng}
-
-localStorage.setItem("home",JSON.stringify(homeLocation))
-
-new google.maps.Marker({
-
-position:homeLocation,
-map:map,
-icon:"https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-title:"自宅"
-
-})
-
-alert("自宅を保存しました")
-
-}
-
-function loadHome(){
-
-let saved=localStorage.getItem("home")
-
-if(saved){
-
-homeLocation=JSON.parse(saved)
-
-new google.maps.Marker({
-
-position:homeLocation,
-map:map,
-icon:"https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-title:"自宅"
-
-})
-
-map.setCenter(homeLocation)
-
-}
-
-}
-
-function calcStar(){
+function calc(){
 
 let birth=document.getElementById("birth").value
 
-if(!birth){
-
-alert("生年月日を入力してください")
-
-return
-
-}
+if(!birth)return
 
 let year=new Date(birth).getFullYear()
 
-let num=11-(year%9)
+let num=(year%9)||9
 
-if(num>9)num-=9
-if(num<1)num+=9
+let star=9-num+1
 
-star=num
+let dir=["北","南","東","西","北東","北西","南東","南西"]
 
-document.getElementById("fortune").innerHTML=
+let lucky=dir[Math.floor(Math.random()*dir.length)]
 
-"あなたの本命星："+star+" 星"
+document.getElementById("result").innerHTML=
 
-drawDirections()
+"あなたの本命星："+star+"<br>"+
+"今日の吉方位："+lucky
 
-}
-
-function getLuckyDirections(star){
-
-const table={
-
-1:{great:[2],good:[1,3]},
-2:{great:[4],good:[3,5]},
-3:{great:[0],good:[7,1]},
-4:{great:[6],good:[5,7]},
-5:{great:[2],good:[1,3]},
-6:{great:[0],good:[7,1]},
-7:{great:[4],good:[3,5]},
-8:{great:[6],good:[5,7]},
-9:{great:[2],good:[1,3]}
+drawLucky()
 
 }
 
-return table[star]
+function drawLucky(){
 
-}
+let center=map.getCenter()
 
-function drawDirections(){
+let triangle=[
+{lat:center.lat(),lng:center.lng()},
+{lat:center.lat()+0.5,lng:center.lng()+0.3},
+{lat:center.lat()+0.5,lng:center.lng()-0.3}
+]
 
-sectors.forEach(s=>s.setMap(null))
-
-sectors=[]
-
-let lucky=getLuckyDirections(star)
-
-const colors={
-
-great:"#00ff88",
-good:"#00ccff",
-bad:"#ff4444"
-
-}
-
-for(let i=0;i<8;i++){
-
-let start=i*45
-
-let end=start+45
-
-let type="bad"
-
-if(lucky.great.includes(i))type="great"
-else if(lucky.good.includes(i))type="good"
-
-let poly=new google.maps.Polygon({
-
-paths:createSector(center,getRadius(),start,end),
-
-strokeOpacity:0,
-
-fillColor:colors[type],
-
-fillOpacity:0.35,
-
-map:map
-
+new google.maps.Polygon({
+paths:triangle,
+map:map,
+fillColor:"gold",
+fillOpacity:0.3,
+strokeColor:"gold"
 })
 
-sectors.push(poly)
+}
+
+function saveHome(){
+
+let center=map.getCenter()
+
+homePos=center
+
+localStorage.setItem("home",JSON.stringify(center))
+
+new google.maps.Marker({
+position:center,
+map:map,
+icon:"https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+title:"自宅"
+})
 
 }
 
-}
+function searchShrine(){
 
-function getRadius(){
-
-let zoom=map.getZoom()
-
-return 2000*Math.pow(2,14-zoom)
-
-}
-
-function createSector(center,radius,start,end){
-
-let pts=[center]
-
-for(let a=start;a<=end;a+=5){
-
-let rad=a*Math.PI/180
-
-let lat=center.lat+(radius/111320)*Math.cos(rad)
-
-let lng=center.lng+(radius/(111320*Math.cos(center.lat*Math.PI/180)))*Math.sin(rad)
-
-pts.push({lat:lat,lng:lng})
-
-}
-
-pts.push(center)
-
-return pts
-
-}
-
-function searchShrines(){
-
-const service=new google.maps.places.PlacesService(map)
+let service=new google.maps.places.PlacesService(map)
 
 service.nearbySearch({
-
-location:center,
-
-radius:3000,
-
+location:map.getCenter(),
+radius:5000,
 keyword:"神社"
-
-},(results,status)=>{
-
-if(status==="OK"){
-
-results.forEach(p=>{
-
-let marker=new google.maps.Marker({
-
-map:map,
-
-position:p.geometry.location,
-
-icon:"https://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
-
-})
-
-let info=new google.maps.InfoWindow({
-
-content:`
-
-<h3>${p.name}</h3>
-
-<p>評価: ${p.rating||"なし"}</p>
-
-<button onclick="getStamp('${p.name}')">御朱印GET</button>
-
-<a target="_blank"
-
-href="https://www.google.com/maps/search/?api=1&query=${p.geometry.location.lat()},${p.geometry.location.lng()}">
-
-GoogleMap
-
-</a>
-
-`
-
-})
-
-marker.addListener("click",()=>{
-
-info.open(map,marker)
-
-})
-
-})
-
-}
-
-})
-
-}
-
-function getStamp(name){
-
-goshuin.push(name)
-
-localStorage.setItem("goshuin",JSON.stringify(goshuin))
-
-alert(name+" の御朱印を取得しました")
+},showPlaces)
 
 }
 
 function searchFood(){
 
-const service=new google.maps.places.PlacesService(map)
+let service=new google.maps.places.PlacesService(map)
 
 service.nearbySearch({
-
-location:center,
-
-radius:3000,
-
+location:map.getCenter(),
+radius:5000,
 type:"restaurant"
+},showPlaces)
 
-},(results,status)=>{
+}
 
-if(status==="OK"){
+function showPlaces(results){
 
-results.forEach(p=>{
+for(let place of results){
 
 let marker=new google.maps.Marker({
-
 map:map,
-
-position:p.geometry.location,
-
-icon:"https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-
+position:place.geometry.location
 })
 
-let info=new google.maps.InfoWindow({
-
-content:`
-
-<h3>${p.name}</h3>
-
-<p>評価: ${p.rating||"なし"}</p>
-
-<a target="_blank"
-
-href="https://www.google.com/maps/search/?api=1&query=${p.geometry.location.lat()},${p.geometry.location.lng()}">
-
-GoogleMap
-
-</a>
-
-`
-
+let infowindow=new google.maps.InfoWindow({
+content:
+"<b>"+place.name+"</b><br>"+
+"<button onclick='goshuin(\""+place.name+"\")'>参拝チェックイン</button><br>"+
+"<a target='_blank' href='https://www.google.com/maps/search/?api=1&query="+
+place.geometry.location.lat()+","+place.geometry.location.lng()+
+"'>詳細</a>"
 })
 
 marker.addListener("click",()=>{
-
-info.open(map,marker)
-
-})
-
+infowindow.open(map,marker)
 })
 
 }
 
-})
+}
+
+function goshuin(name){
+
+alert("📿 デジタル御朱印GET！\n"+name)
 
 }
 
 </script>
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCBzk1mv7n0qNsSUpaG1mdtgPh_UV5K7zM&libraries=places&callback=initMap" async defer></script>
+
 </body>
 </html>
-:::
