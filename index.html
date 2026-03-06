@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
+<meta charset="utf-8">
+<title>吉方位ナビ</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>開運コンパス</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <link rel="manifest" href="manifest.json">
 
@@ -14,64 +13,30 @@
 body{
 margin:0;
 font-family:sans-serif;
-background:#050505;
+background:black;
 color:white;
 text-align:center;
 }
 
-header{
-background:linear-gradient(45deg,#d4af37,#ffd700);
-color:black;
-padding:20px;
-font-size:28px;
-font-weight:bold;
-}
-
-.container{
-padding:20px;
-}
-
-input,button{
-padding:12px;
-margin:10px;
-border-radius:10px;
-border:none;
-font-size:16px;
+#map{
+height:80vh;
+width:100%;
 }
 
 button{
-background:#ffd700;
-font-weight:bold;
-}
-
-#map{
-height:420px;
-margin-top:20px;
+padding:12px 20px;
+margin:10px;
+font-size:16px;
+border:none;
 border-radius:10px;
 }
 
-.result{
-font-size:24px;
-color:#ffd700;
-margin-top:15px;
+.shrine{
+background:#ffcc00;
 }
 
-.star{
-font-size:18px;
-margin-top:5px;
-}
-
-.omikuji{
-font-size:20px;
-margin-top:15px;
-color:#ffd700;
-}
-
-.goshuin{
-margin-top:25px;
-border:2px solid gold;
-padding:20px;
-border-radius:10px;
+.food{
+background:#ff6666;
 }
 
 </style>
@@ -80,238 +45,158 @@ border-radius:10px;
 
 <body>
 
-<header>
-開運コンパス
-</header>
+<h2>🔮 吉方位ナビ</h2>
 
-<div class="container">
-
-<h2>生年月日</h2>
-
-<input type="date" id="birth">
-
-<br>
-
-<button onclick="startApp()">
-今日の吉方位
-</button>
-
-<div class="star" id="star"></div>
-<div class="result" id="direction"></div>
+<button onclick="searchShrines()" class="shrine">⛩ 神社</button>
+<button onclick="searchFood()" class="food">🍽 開運フード</button>
 
 <div id="map"></div>
 
-<h2>おみくじ</h2>
-
-<button onclick="omikuji()">
-引く
-</button>
-
-<div id="omikujiResult" class="omikuji"></div>
-
-<div class="goshuin">
-
-<h2>デジタル御朱印</h2>
-
-<button onclick="checkin()">
-参拝チェックイン
-</button>
-
-<div id="stamp"></div>
-
-</div>
-
-<br>
-
-<button onclick="shareLuck()">
-SNSシェア
-</button>
-
-</div>
-
 <script>
 
-let map
-let userLocation
-let luckyDirection
-
-function startApp(){
-
-calculateStar()
-calculateDirection()
-initMap()
-
-}
-
-function calculateStar(){
-
-const birth=document.getElementById("birth").value
-
-if(!birth){
-alert("生年月日を入力してください")
-return
-}
-
-const year=parseInt(birth.split("-")[0])
-
-const num=11-(year%9)
-
-const star=num>9?num-9:num
-
-document.getElementById("star").innerHTML=
-"あなたの本命星："+star+"白星"
-
-}
-
-function calculateDirection(){
-
-const directions=[
-"北","北東","東","南東",
-"南","南西","西","北西"
-]
-
-luckyDirection=directions[Math.floor(Math.random()*8)]
-
-document.getElementById("direction").innerHTML=
-"今日の吉方位："+luckyDirection
-
-}
+let map;
+let center;
 
 function initMap(){
 
-navigator.geolocation.getCurrentPosition(pos=>{
+navigator.geolocation.getCurrentPosition(position=>{
 
-userLocation={
-lat:pos.coords.latitude,
-lng:pos.coords.longitude
-}
+center={
+lat:position.coords.latitude,
+lng:position.coords.longitude
+};
 
-map=new google.maps.Map(
-document.getElementById("map"),
-{
-zoom:13,
-center:userLocation
-}
-)
+map=new google.maps.Map(document.getElementById("map"),{
+zoom:14,
+center:center
+});
 
 new google.maps.Marker({
-position:userLocation,
+position:center,
 map:map,
 title:"現在地"
-})
+});
 
-drawLuckyZone()
-searchShrines()
+drawLuckyDirections();
 
-})
+});
 
 }
 
-function drawLuckyZone(){
+function drawLuckyDirections(){
 
-new google.maps.Circle({
+const colors=[
+"#ff0000",
+"#ff8800",
+"#ffff00",
+"#00ff00",
+"#00ffff",
+"#0088ff",
+"#8800ff",
+"#ff00ff"
+];
 
-strokeColor:"#FFD700",
-strokeOpacity:0.8,
-strokeWeight:2,
-fillColor:"#FFD700",
-fillOpacity:0.2,
-map:map,
-center:userLocation,
-radius:3000
+for(let i=0;i<8;i++){
 
-})
+let start=i*45;
+let end=start+45;
+
+let triangle=new google.maps.Polygon({
+paths:createSector(center,5000,start,end),
+strokeOpacity:0,
+fillColor:colors[i],
+fillOpacity:0.25,
+map:map
+});
+
+}
+
+}
+
+function createSector(center,radius,startAngle,endAngle){
+
+let points=[center];
+
+for(let angle=startAngle;angle<=endAngle;angle+=5){
+
+let rad=angle*Math.PI/180;
+
+let lat=center.lat+(radius/111320)*Math.cos(rad);
+let lng=center.lng+(radius/(111320*Math.cos(center.lat*Math.PI/180)))*Math.sin(rad);
+
+points.push({lat:lat,lng:lng});
+
+}
+
+points.push(center);
+
+return points;
 
 }
 
 function searchShrines(){
 
-const service=new google.maps.places.PlacesService(map)
+const request={
+location:center,
+radius:3000,
+keyword:"神社"
+};
 
-service.textSearch({
+const service=new google.maps.places.PlacesService(map);
 
-query:"神社"
-
-},function(results,status){
+service.nearbySearch(request,(results,status)=>{
 
 if(status===google.maps.places.PlacesServiceStatus.OK){
 
-for(let i=0;i<results.length;i++){
+results.forEach(place=>{
 
 new google.maps.Marker({
-
 map:map,
-position:results[i].geometry.location,
-icon:"https://maps.google.com/mapfiles/kml/shapes/temple.png"
+position:place.geometry.location,
+icon:"https://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
+});
 
-})
-
-}
-
-}
-
-})
+});
 
 }
 
-function omikuji(){
-
-const list=[
-"大吉：行動すると運気が開く",
-"中吉：準備を整えると良い",
-"吉：出会い運あり",
-"小吉：焦らず進め",
-"末吉：静観の日",
-"凶：今日は休息"
-]
-
-const result=list[Math.floor(Math.random()*list.length)]
-
-document.getElementById("omikujiResult").innerText=result
+});
 
 }
 
-function checkin(){
+function searchFood(){
 
-const chance=Math.random()
+const request={
+location:center,
+radius:3000,
+type:"restaurant"
+};
 
-if(chance>0.4){
+const service=new google.maps.places.PlacesService(map);
 
-document.getElementById("stamp").innerHTML="⛩ 御朱印GET！"
+service.nearbySearch(request,(results,status)=>{
 
-}else{
+if(status===google.maps.places.PlacesServiceStatus.OK){
 
-document.getElementById("stamp").innerHTML="神社境内でチェックインしてください"
+results.forEach(place=>{
 
-}
+new google.maps.Marker({
+map:map,
+position:place.geometry.location,
+icon:"https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+});
 
-}
-
-function shareLuck(){
-
-if(navigator.share){
-
-navigator.share({
-
-title:"開運コンパス",
-text:"今日の吉方位："+luckyDirection,
-url:location.href
-
-})
+});
 
 }
 
-}
+});
 
-if('serviceWorker' in navigator){
-navigator.serviceWorker.register('./sw.js')
 }
 
 </script>
 
-<script async defer
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCBzk1mv7n0qNsSUpaG1mdtgPh_UV5K7zM&libraries=places&callback=initMap">
-</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCBzk1mv7n0qNsSUpaG1mdtgPh_UV5K7zM&libraries=places&callback=initMap" async defer></script>
 
 </body>
 </html>
