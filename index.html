@@ -2,369 +2,360 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>吉方位ナビ LuckyCompass</title>
-
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>開運コンパス - Kaiun Compass</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 <style>
-
-body{
-margin:0;
-font-family:-apple-system,BlinkMacSystemFont;
-background:#0b0b14;
-color:white;
+:root {
+    --deep-blue: #0b0e1a;
+    --navy: #161b33;
+    --gold: #d4af37;
+    --light-gold: #fcf4d9;
+    --glass: rgba(255, 255, 255, 0.05);
 }
 
-header{
-padding:15px;
-text-align:center;
-background:linear-gradient(90deg,#111,#1f1f2e);
-box-shadow:0 4px 20px rgba(0,0,0,0.5);
+body {
+    margin: 0;
+    font-family: 'Hiragino Mincho ProN', 'serif';
+    background: var(--deep-blue);
+    color: #fff;
+    overflow: hidden;
 }
 
-h1{
-margin:0;
-font-size:20px;
-color:gold;
-letter-spacing:1px;
+/* ヘッダー：特別感のあるデザイン */
+header {
+    padding: 15px;
+    text-align: center;
+    background: linear-gradient(180deg, #1a1a2e 0%, var(--deep-blue) 100%);
+    border-bottom: 1px solid var(--gold);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 
-#controls{
-padding:10px;
-display:flex;
-gap:6px;
-overflow:auto;
-background:#141422;
+header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, var(--gold) 0%, #fff 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
 }
 
-button,input{
-border:none;
-border-radius:8px;
-padding:8px 12px;
-font-size:14px;
+/* コントロールパネル */
+#controls {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: var(--navy);
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
 }
 
-button{
-background:gold;
-font-weight:bold;
+input[type="date"] {
+    background: var(--glass);
+    border: 1px solid var(--gold);
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
 }
 
-#map{
-height:60vh;
-width:100%;
+.btn-icon {
+    background: var(--glass);
+    border: 1px solid var(--gold);
+    color: var(--light-gold);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
-#radar{
-height:160px;
-display:flex;
-justify-content:center;
-align-items:center;
-background:#101018;
+.btn-icon.active {
+    background: var(--gold);
+    color: var(--deep-blue);
 }
 
-canvas{
-background:#0f0f1a;
-border-radius:100%;
+/* マップエリア：全画面感覚 */
+#map-container {
+    position: relative;
+    height: 55vh;
+    width: 100%;
 }
 
-#panel{
-padding:15px;
+#map { height: 100%; width: 100%; }
+
+/* 開運レーダーのオーバーレイ */
+#radar-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
 }
 
-.card{
-background:#17172a;
-border-radius:12px;
-padding:12px;
-margin-bottom:10px;
-box-shadow:0 4px 12px rgba(0,0,0,0.4);
+/* 下部パネル：宝物庫（曼荼羅スタイル） */
+#bottom-panel {
+    height: 35vh;
+    background: linear-gradient(0deg, #000 0%, var(--navy) 100%);
+    border-top: 2px solid var(--gold);
+    border-radius: 25px 25px 0 0;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
 }
 
-.title{
-font-weight:bold;
-margin-bottom:5px;
+.mandala-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
 }
 
-.small{
-font-size:13px;
-opacity:0.8;
+.goshuin-slot {
+    aspect-ratio: 1;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);
+    font-size: 0.7rem;
+    transition: 0.5s;
 }
 
+.goshuin-slot.active {
+    border-color: var(--gold);
+    box-shadow: 0 0 15px var(--gold);
+    background: radial-gradient(circle, rgba(212,175,55,0.3) 0%, transparent 70%);
+}
+
+.fortune-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--gold);
+}
+
+/* アニメーション */
+@keyframes pulse-gold {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+.lucky-pulse {
+    animation: pulse-gold 2s infinite ease-in-out;
+}
 </style>
 </head>
 
 <body>
 
 <header>
-
-<h1>🧭 吉方位ナビ LuckyCompass</h1>
-
+    <h1>開運コンパス Kaiun Compass</h1>
 </header>
 
 <div id="controls">
-
-<input type="date" id="birth">
-
-<button onclick="calc()">🔮吉方位</button>
-
-<button onclick="saveHome()">🏠自宅</button>
-
-<button onclick="searchShrine()">⛩神社</button>
-
-<button onclick="searchPower()">✨パワースポット</button>
-
-<button onclick="searchFood()">🍜開運グルメ</button>
-
+    <input type="date" id="birth" value="1995-03-05">
+    <button class="btn-icon active" onclick="calculateLucky()">🔮 鑑定</button>
+    <button class="btn-icon" onclick="saveHome()">🏠 自宅</button>
+    <button class="btn-icon" onclick="searchNearby('神社')">⛩ 神社</button>
+    <button class="btn-icon" onclick="searchNearby('パワースポット')">✨ 聖地</button>
 </div>
 
-<div id="map"></div>
-
-<div id="radar">
-<canvas id="compass" width="150" height="150"></canvas>
+<div id="map-container">
+    <div id="map"></div>
+    <div id="radar-overlay">
+        <canvas id="compass" width="280" height="280"></canvas>
+    </div>
 </div>
 
-<div id="panel">
+<div id="bottom-panel">
+    <div id="result-area">
+        <div class="fortune-card">
+            <div style="color:var(--gold); font-size: 0.8rem; margin-bottom:5px;">本日の神託</div>
+            <div id="fortune-text">生年月日を入力して鑑定を開始してください。</div>
+        </div>
+    </div>
 
-<div class="card">
-
-<div class="title">機能</div>
-
-<div class="small">
-
-🧭 吉方位地図  
-🔮 九星気学  
-🏠 自宅登録  
-⛩ 神社検索  
-✨ パワースポット  
-🍜 開運グルメ  
-📿 デジタル御朱印  
-📍 スポット詳細  
-
-</div>
-
-</div>
-
-<div id="result"></div>
-
+    <div style="font-size: 0.9rem; border-bottom: 1px solid var(--gold); padding-bottom: 5px;">
+        宝物庫 - デジタル御朱印
+    </div>
+    <div class="mandala-container" id="mandala">
+        </div>
 </div>
 
 <script>
+let map, userPos, markers = [], luckyPolygon;
+const compass = document.getElementById("compass");
+const ctx = compass.getContext("2d");
 
-let map
-let userPos
-let compass=document.getElementById("compass")
-let ctx=compass.getContext("2d")
+// --- 1. 九星気学ロジック ---
+const STAR_NAMES = ["一白水星", "二黒土星", "三碧木星", "四緑木星", "五黄土星", "六白金星", "七赤金星", "八白土星", "九紫火星"];
 
-function initMap(){
-
-map=new google.maps.Map(document.getElementById("map"),{
-zoom:13,
-center:{lat:35,lng:135},
-styles:[
-{elementType:"geometry",stylers:[{color:"#0b0b14"}]},
-{elementType:"labels.text.fill",stylers:[{color:"#ffffff"}]}
-]
-})
-
-navigator.geolocation.getCurrentPosition(pos=>{
-
-userPos={
-lat:pos.coords.latitude,
-lng:pos.coords.longitude
+function getHonmei(birthDate) {
+    let year = new Date(birthDate).getFullYear();
+    // 節分(2/4)前なら前年扱い
+    const month = new Date(birthDate).getMonth() + 1;
+    const day = new Date(birthDate).getDate();
+    if (month < 2 || (month == 2 && day < 4)) year--;
+    
+    let sum = 0;
+    String(year).split('').forEach(n => sum += parseInt(n));
+    while(sum > 9) {
+        let nS = 0;
+        String(sum).split('').forEach(n => nS += parseInt(n));
+        sum = nS;
+    }
+    let idx = (11 - sum) % 9;
+    return STAR_NAMES[idx === 0 ? 8 : idx - 1];
 }
 
-map.setCenter(userPos)
+// --- 2. 地図の初期化 ---
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 14,
+        center: {lat: 34.747, lng: 135.341}, // 西宮周辺をデフォルトに
+        disableDefaultUI: true,
+        styles: [
+            { "elementType": "geometry", "stylers": [{ "color": "#0b0e1a" }] },
+            { "elementType": "labels.text.fill", "stylers": [{ "color": "#8d94a3" }] },
+            { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] }
+        ]
+    });
 
-new google.maps.Marker({
-position:userPos,
-map:map,
-title:"現在地"
-})
+    navigator.geolocation.getCurrentPosition(pos => {
+        userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        map.setCenter(userPos);
+        new google.maps.Marker({ position: userPos, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: '#4285F4', fillOpacity: 1, strokeColor: 'white', strokeWeight: 2 } });
+    });
 
-})
-
-drawCompass()
-
+    drawCompass();
+    createMandala();
 }
 
-function calc(){
+// --- 3. 鑑定実行 ---
+function calculateLucky() {
+    const birth = document.getElementById("birth").value;
+    if(!birth) return;
 
-let birth=document.getElementById("birth").value
+    const star = getHonmei(birth);
+    // ロジックに基づいた吉方位（簡易的にランダムまたは日付固定）
+    const luckyDirs = ["南東", "北西", "西", "東"];
+    const luckyDir = luckyDirs[Math.floor(Math.random() * luckyDirs.length)];
+    const angleMap = {"北": 270, "北東": 315, "東": 0, "南東": 45, "南": 90, "南西": 135, "西": 180, "北西": 225};
 
-if(!birth)return
+    document.getElementById("fortune-text").innerHTML = 
+        `あなたの星：<b>${star}</b><br>本日の最大吉方：<b style="color:var(--gold); font-size:1.2rem;">${luckyDir}</b>`;
 
-let year=new Date(birth).getFullYear()
-
-let num=(year%9)||9
-
-let star=9-num+1
-
-let dirs=["北","北東","東","南東","南","南西","西","北西"]
-
-let luckyIndex=Math.floor(Math.random()*8)
-
-let lucky=dirs[luckyIndex]
-
-document.getElementById("result").innerHTML=
-
-"<div class='card'>"+
-"<div class='title'>今日の運勢</div>"+
-"本命星："+star+"<br>"+
-"最大吉方位："+lucky+
-"</div>"
-
-drawCompass(luckyIndex)
-
-drawSector(luckyIndex)
-
+    drawCompass(angleMap[luckyDir]);
+    showLuckySector(angleMap[luckyDir]);
 }
 
-function drawCompass(luckyIndex=0){
+// --- 4. ビジュアル演出（羅盤 & セクター） ---
+function drawCompass(luckyAngle = null) {
+    ctx.clearRect(0, 0, 280, 280);
+    const cx = 140, cy = 140;
 
-ctx.clearRect(0,0,150,150)
+    // 外枠
+    ctx.beginPath();
+    ctx.arc(cx, cy, 120, 0, Math.PI*2);
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.3)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-ctx.beginPath()
-
-ctx.arc(75,75,70,0,Math.PI*2)
-
-ctx.strokeStyle="white"
-
-ctx.stroke()
-
-for(let i=0;i<8;i++){
-
-let angle=(Math.PI*2/8)*i
-
-let x=75+Math.cos(angle)*60
-
-let y=75+Math.sin(angle)*60
-
-ctx.fillStyle=i==luckyIndex?"gold":"gray"
-
-ctx.beginPath()
-
-ctx.arc(x,y,6,0,Math.PI*2)
-
-ctx.fill()
-
+    // 吉方位へのサーチライト
+    if(luckyAngle !== null) {
+        const rad = (luckyAngle * Math.PI) / 180;
+        const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 130);
+        grad.addColorStop(0, "rgba(212, 175, 55, 0.8)");
+        grad.addColorStop(1, "transparent");
+        
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, 130, rad - 0.3, rad + 0.3);
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
 }
 
+function showLuckySector(angle) {
+    if(luckyPolygon) luckyPolygon.setMap(null);
+    const center = map.getCenter();
+    const radius = 0.02; // 約2km
+    const path = [center];
+    
+    for(let a = angle - 20; a <= angle + 20; a += 2) {
+        const rad = (a * Math.PI) / 180;
+        path.push({ lat: center.lat() + radius * Math.sin(rad), lng: center.lng() + radius * Math.cos(rad) });
+    }
+    path.push(center);
+
+    luckyPolygon = new google.maps.Polygon({
+        paths: path,
+        map: map,
+        fillColor: "#d4af37",
+        fillOpacity: 0.2,
+        strokeColor: "#d4af37",
+        strokeWeight: 1
+    });
 }
 
-function drawSector(index){
-
-let center=map.getCenter()
-
-let start=index*(360/8)
-let end=start+(360/8)
-
-let path=[center]
-
-for(let a=start;a<=end;a+=2){
-
-let rad=a*Math.PI/180
-
-path.push({
-lat:center.lat()+0.03*Math.cos(rad),
-lng:center.lng()+0.03*Math.sin(rad)
-})
-
+// --- 5. 神社検索 & 御朱印 ---
+function searchNearby(keyword) {
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch({ location: map.getCenter(), radius: 3000, keyword: keyword }, (results) => {
+        markers.forEach(m => m.setMap(null));
+        results.forEach(place => {
+            const m = new google.maps.Marker({
+                position: place.geometry.location,
+                map: map,
+                animation: google.maps.Animation.DROP,
+                icon: { url: 'https://maps.google.com/mapfiles/ms/icons/gold-snlv.png' }
+            });
+            m.addListener('click', () => {
+                new google.maps.InfoWindow({ content: `<b>${place.name}</b><br><button onclick="getGoshuin('${place.name}')" style="background:var(--gold); border:none; border-radius:4px; padding:5px; margin-top:5px; cursor:pointer;">御朱印を授かる</button>` }).open(map, m);
+            });
+            markers.push(m);
+        });
+    });
 }
 
-path.push(center)
-
-new google.maps.Polygon({
-paths:path,
-map:map,
-fillColor:"gold",
-fillOpacity:0.25,
-strokeColor:"gold",
-strokeWeight:2
-})
-
+function getGoshuin(name) {
+    const slots = document.querySelectorAll('.goshuin-slot');
+    for(let slot of slots) {
+        if(!slot.classList.contains('active')) {
+            slot.classList.add('active');
+            slot.innerHTML = `<span style="font-size:1.5rem">⛩️</span><br>${name.substring(0,4)}`;
+            alert(`【${name}】のデジタル御朱印を宝物庫に納めました。`);
+            // ハプティックフィードバックのシミュレーション
+            if (window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
+            break;
+        }
+    }
 }
 
-new google.maps.Polygon({
-paths:path,
-map:map,
-fillColor:"gold",
-fillOpacity:0.3,
-strokeColor:"gold"
-})
-
+function createMandala() {
+    const container = document.getElementById("mandala");
+    for(let i=0; i<9; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'goshuin-slot';
+        slot.innerHTML = "？";
+        container.appendChild(slot);
+    }
 }
 
-function saveHome(){
-
-let center=map.getCenter()
-
-localStorage.setItem("home",JSON.stringify(center))
-
-new google.maps.Marker({
-position:center,
-map:map,
-icon:"https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-title:"自宅"
-})
-
-alert("自宅保存しました")
-
-}
-
-function searchShrine(){search("神社")}
-
-function searchPower(){search("パワースポット")}
-
-function searchFood(){search("restaurant")}
-
-function search(word){
-
-let service=new google.maps.places.PlacesService(map)
-
-service.nearbySearch({
-location:map.getCenter(),
-radius:5000,
-keyword:word
-},showPlaces)
-
-}
-
-function showPlaces(results){
-
-for(let place of results){
-
-let marker=new google.maps.Marker({
-map:map,
-position:place.geometry.location
-})
-
-let info=new google.maps.InfoWindow({
-content:
-
-"<b>"+place.name+"</b><br>"+
-"<button onclick='goshuin(\""+place.name+"\")'>📿御朱印</button><br>"+
-"<a target='_blank' href='https://www.google.com/maps/search/?api=1&query="+
-place.geometry.location.lat()+","+place.geometry.location.lng()+
-"'>詳細</a>"
-
-})
-
-marker.addListener("click",()=>{
-info.open(map,marker)
-})
-
-}
-
-}
-
-function goshuin(name){
-
-alert("📿デジタル御朱印GET\n"+name)
-
+function saveHome() {
+    const center = map.getCenter();
+    new google.maps.Marker({ position: center, map: map, icon: 'https://maps.google.com/mapfiles/kml/pal2/icon10.png' });
+    alert("自宅を基点として登録しました。");
 }
 
 </script>
-
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCBzk1mv7n0qNsSUpaG1mdtgPh_UV5K7zM&libraries=places&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
 
 </body>
 </html>
