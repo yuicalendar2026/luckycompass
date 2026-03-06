@@ -254,19 +254,31 @@ function drawSector(index){
 
 let center=map.getCenter()
 
-let angle=index*(360/8)
+let start=index*(360/8)
+let end=start+(360/8)
 
 let path=[center]
 
-for(let i=0;i<=30;i++){
+for(let a=start;a<=end;a+=2){
 
-let rad=(angle+i)*Math.PI/180
+let rad=a*Math.PI/180
 
 path.push({
-
 lat:center.lat()+0.03*Math.cos(rad),
 lng:center.lng()+0.03*Math.sin(rad)
+})
 
+}
+
+path.push(center)
+
+new google.maps.Polygon({
+paths:path,
+map:map,
+fillColor:"gold",
+fillOpacity:0.25,
+strokeColor:"gold",
+strokeWeight:2
 })
 
 }
